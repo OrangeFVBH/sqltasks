@@ -1,38 +1,50 @@
+-- <TABLES>
+CREATE TABLE departments (
+    department_id SERIAL PRIMARY KEY,
+    department_name TEXT NOT NULL UNIQUE CHECK ( department_name <> '' )
+);
+
 CREATE TABLE employees (
-    employee_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL
+    employee_id SERIAL PRIMARY KEY,
+    full_name TEXT NOT NULL CHECK ( full_name <> '' ),
+    department_id INT NOT NULL,
+    FOREIGN KEY (department_id) REFERENCES departments(department_id)
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
 );
 
-CREATE TABLE access_cards (
-    card_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    card_number VARCHAR(30) NOT NULL,
-    employee_id INTEGER NOT NULL,
-    CONSTRAINT uq_access_card_number UNIQUE (card_number),
-    CONSTRAINT uq_access_card_employee UNIQUE (employee_id),
-    CONSTRAINT fk_access_card_employee
-        FOREIGN KEY (employee_id) REFERENCES employees (employee_id)
-        ON DELETE RESTRICT
-);
+-- <DATA>
+INSERT INTO departments (department_name) VALUES
+    ('ИТ'),
+    ('Бухгалтерия'),
+    ('Маркетинг');
 
-INSERT INTO employees (full_name) VALUES
-    ('Иван Петров'),
-    ('Анна Смирнова'),
-    ('Олег Соколов');
+INSERT INTO employees (full_name, department_id) VALUES
+    ('Алексей Орлов', 1),
+    ('Мария Кузнецова', 1),
+    ('Елена Попова', 2),
+    ('Павел Морозов', 3);
 
-INSERT INTO access_cards (card_number, employee_id) VALUES
-    ('CARD-001', 1),
-    ('CARD-002', 2);
-
-SELECT e.full_name AS employee_name, ac.card_number
+-- <VIEWS>
+CREATE VIEW department_employees AS
+SELECT e.employee_id, e.full_name AS employee_name, d.department_name
 FROM employees AS e
-INNER JOIN access_cards AS ac ON ac.employee_id = e.employee_id
+JOIN departments AS d ON e.department_id = d.department_id;
+
+-- <QUERIES>
+SELECT e.employee_id, e.full_name AS employee_name, d.department_name
+FROM employees AS e
+JOIN departments AS d ON e.department_id = d.department_id
 ORDER BY e.employee_id;
 
-CREATE VIEW employee_access_cards AS
-SELECT e.full_name AS employee_name, ac.card_number
-FROM employees AS e
-INNER JOIN access_cards AS ac ON ac.employee_id = e.employee_id;
+SELECT employee_id, employee_name, department_name
+FROM department_employees
+WHERE department_name = 'ИТ'
+ORDER BY employee_id;
 
-SELECT employee_name, card_number
-FROM employee_access_cards
-ORDER BY card_number;
+UPDATE employees SET department_id = 3 WHERE employee_id = 2;
+
+SELECT e.employee_id, e.full_name AS employee_name, d.department_name
+FROM employees AS e
+JOIN departments AS d ON e.department_id = d.department_id
+ORDER BY e.employee_id;
